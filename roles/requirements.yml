@@ -1,0 +1,5 @@
+---
+- name: cdougan-sssd
+  scm: git
+  src: git+http://githost:7990/scm/aan/cdougan-sssd.git
+  version: master

@@ -1,0 +1,42 @@
+---
+- hosts: "{{ host_selection|default('none') }}"
+  become: yes
+  vars_files:
+    - ./vars/sssd_config.yml
+  vars:
+    new_users: none
+    new_groups: none
+    new_sudousers: none
+    new_name: none
+  tasks:
+    - block:
+      - name: Ensure SSSD is installed and configured
+        include_role: 
+          name: cdougan-sssd
+        vars:
+          ad_user: "{{ ad_username_sssd }}"
+          ad_password: "{{ ad_password_sssd }}"
+          domain: "{{ ad_domain_sssd }}"
+  
+      - name: Set up Group Access
+        include_role: 
+          name: cdougan-sssd/groups
+        vars:
+          group_type: "{{ item.name }}"
+          adgroups: "{{ item.groups }}"
+          sudousers: "{{ item.sudousers }}"
+        loop: "{{ sssd_groups_list|default([]) }}"
+        
+      - name: Set up User Access
+        include_role: 
+          name: cdougan-sssd/users
+        vars:
+          user_type: "{{ item.name }}"
+          adusers: "{{ item.users }}"
+          sudousers: "{{ item.sudousers }}"
+        loop: "{{ sssd_users_list|default([]) }}"
+        
+      - name: Refresh sssd service to pick up any changes
+        include_role: 
+          name: cdougan-sssd/refresh 
+      when: ansible_os_family == "RedHat" and ansible_distribution_major_version|int > 6

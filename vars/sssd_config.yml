@@ -1,0 +1,22 @@
+---
+  ad_domain_sssd: "{{ ansible_fqdn.partition('.')[2] }}"
+  dn_base: "{{ ad_domain_sssd.partition('.')[0] }}"
+  ad_username_sssd: "{% if ad_domain_sssd == 'mydomain.co.uk' -%}{{ ad_admin_username_mydomain }}{%- else %}{{ ad_admin_username_otherdomain }}{%- endif %}"
+  ad_password_sssd: "{% if ad_domain_sssd == 'mydomain.co.uk' -%}{{ ad_admin_password_mydomain }}{%- else %}{{ ad_admin_password_otherdomain }}{%- endif %}"
+  ad_groups:
+    admin_group_one:
+      groups: 
+        mydomain: ['my-domain-admin-group']
+        otherdomain: ['admins-in-other-domain']
+        sparedomain: ['sparedomain-administrators']
+      sudousers: ['ALL']
+    admin_group_two:
+      groups:
+        mydomain: ['mydomainadmins']
+        otherdomain: ['otherdomainadmins']
+        sparedomain: ['sparedomainadmins']
+      sudousers: ['ALL']
+
+  sssd_groups_list: "{% set tl=[] %}{% for adg in ad_groups %}{% if dn_base in ad_groups[adg]['groups'] %}{{ tl.append({'name':adg,'sudousers':ad_groups[adg]['sudousers'],'groups': ad_groups[adg]['groups'][dn_base]}) }}{% endif %}{% endfor %}{% if new_groups|default('none') != 'none' %}{% if new_sudousers|default('none') != 'none' %}{% if new_name|default('none') != 'none' %}{{ tl.append({'name':new_name,'sudousers':(new_sudousers.split(',')),'groups':(new_groups.split(','))}) }}{% endif %}{% endif %}{% endif %}{{ tl }}"  
+  sssd_users_list: "{% set tl=[] %}{% if new_users|default('none') != 'none' %}{% if new_sudousers|default('none') != 'none' %}{% if new_name|default('none') != 'none' %}{{ tl.append({'name':new_name,'sudousers':(new_sudousers.split(',')),'users':(new_users.split(','))}) }}{% endif %}{% endif %}{% endif %}{{ tl }}"  
+
